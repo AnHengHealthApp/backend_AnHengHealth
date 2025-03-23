@@ -142,3 +142,84 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
   ```
 
 ---
+
+## 3. 提交問題回報
+### `POST /issue`
+提交問題回報（需認證）。
+#### 請求參數
+- **Headers**:
+  ```
+  Authorization: Bearer <token>
+  ```
+- **Content-Type**: `application/json`
+- **Body**:
+  ```json
+  {
+    "issue_description": "string (最大1000字元)"
+  }
+  ```
+
+#### 成功回應
+- **狀態碼**: `201 Created`
+- **Body**:
+  ```json
+  {
+    "message": "問題已回報",
+    "report_id": "integer"
+  }
+  ```
+
+#### 錯誤回應
+- `400 Bad Request`:
+  ```json
+  {
+    "error": {
+      "message": "請提供問題描述"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "問題描述長度不能超過1000字元"
+    }
+  }
+  ```
+- `401 Unauthorized`:
+  ```json
+  {
+    "error": {
+      "message": "未提供認證憑證"
+    }
+  }
+  ```
+- `403 Forbidden`:
+  ```json
+  {
+    "error": {
+      "message": "認證憑證已過期，請重新登入"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "無效的認證憑證"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "error": {
+      "message": "伺服器錯誤",
+      "details": {
+        "code": "string",
+        "message": "string"
+      }
+    }
+  }
+  ```
+
+---
+
