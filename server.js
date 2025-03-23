@@ -7,6 +7,11 @@ app.use(express.json());
 
 const API_VERSION = "v1"
 
+const authRoutes = require('./routes/auth');
+
+
+// 路由
+app.use(`/api/${API_VERSION}/auth`, authRoutes);
 
 
 // 啟動伺服器
