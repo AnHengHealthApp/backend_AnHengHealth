@@ -1,2 +1,396 @@
-# Anhen Health Assistant API 文檔
-Base URL: `{BACKEND_BASE_URL}/api/v1`
+# Anhen Health Assistant API伺服器架設文檔
+
+## 概述
+本文件提供「Anhen Health Assistant」後端 API 伺服器的架設指南，包含環境設置、依賴安裝、資料庫配置、環境變數設置和啟動步驟。後端使用 Node.js 和 Express.js 框架，資料庫使用 MySQL，並支援 JWT 認證和電子郵件通知功能。
+
+---
+
+## 環境要求
+- **Node.js**: 版本 16.x 或更高（建議使用最新 LTS 版本）
+- **npm**: 隨 Node.js 一起安裝（建議版本 8.x 或更高）
+- **MySQL**: 版本 8.0 或更高
+- **作業系統**: Windows、macOS 或 Linux
+- **郵件服務**: 需要一個 SMTP 服務（如 Gmail）用於寄送問題回報通知
+
+---
+
+## 專案結構
+以下是專案的檔案結構概覽：
+
+```
+/
+├── config/
+│   └── database.js        # 資料庫連線
+├── middleware/
+│   └── auth.js  # JWT 認證中間件
+├── routes/
+│   ├── auth.js           # 認證相關路由（註冊、登入、用戶資訊）
+│   └── report.js          # 問題回報路由
+├── template/
+│   └── anhen_health_assistant.sql   # 資料表樣板
+│
+├── .env                  # 環境變數配置文件
+├── .env_example          # 環境變數配置文件 樣板
+├── server.js             # server
+├── package.json          # 專案依賴和腳本
+└── README.md             # 專案說明文件
+```
+
+---
+
+## 架設步驟
+
+### 1. 克隆專案
+將專案克隆到本地：
+
+```bash
+git clone <repository-url>
+cd anhen-health-assistant
+```
+
+### 2. 安裝依賴
+使用 npm 安裝專案所需的依賴：
+
+```bash
+npm install
+```
+
+#### 依賴列表
+- `express`: Web 框架
+- `mysql2`: MySQL 資料庫驅動
+- `jsonwebtoken`: JWT 認證
+- `bcrypt`: 密碼加密
+- `nodemailer`: 電子郵件寄送
+- `dotenv`: 環境變數管理
+
+### 3. 設置資料庫
+#### 3.1 安裝並啟動 MySQL
+確保 MySQL 已安裝並運行。如果尚未安裝，請參考官方文件進行安裝：
+- [MySQL 安裝指南](https://dev.mysql.com/doc/mysql-installation-excerpt/8.0/en/)
+
+#### 3.2 創建資料庫
+連接到 MySQL 並創建資料庫：
+
+```sql
+CREATE DATABASE anhen_health_assistant;
+```
+
+#### 3.3 匯入資料表
+資料表模板位置：
+```
+./template/anhen_health_assistant.sql
+```
+
+
+
+
+### 4. 設置環境變數
+在專案根目錄下創建 `.env` 檔案，並添加以下環境變數：
+
+```env
+# 伺服器端口
+PORT=3000
+
+# 資料庫配置
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=anhen_health_assistant
+
+# JWT 密鑰
+JWT_SECRET=your_jwt_secret_key
+
+# 郵件服務配置（以 Gmail 為例）
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+DEVELOPER_EMAIL=developer_email@example.com
+```
+
+#### 環境變數說明
+- `PORT`: 伺服器運行的端口，預設為 3000。
+- `DB_*`: 資料庫連線資訊，根據你的 MySQL 配置調整。
+- `JWT_SECRET`: 用於簽署 JWT 的密鑰，建議使用隨機且安全的字串（至少 32 字元）。
+- `EMAIL_*`: 郵件服務配置，用於寄送問題回報通知。
+  - 如果使用 Gmail，`EMAIL_PASS` 應為應用程式密碼（App Password），請參考 [Gmail 應用程式密碼設置](https://support.google.com/accounts/answer/185833)。
+- `DEVELOPER_EMAIL`: 接收問題回報通知的開發者信箱。
+
+### 5. 啟動伺服器
+運行以下命令啟動伺服器：
+
+```bash
+npm start
+```
+
+
+啟動後，你應該會看到以下訊息：
+
+```
+Server running on port 3000
+```
+
+### 6. 測試 API
+使用工具（如 Postman 或 cURL）測試 API 端點。以下是幾個主要端點：
+- **註冊**: `POST {BACKEND_BASE_URL}/api/v1/auth/register`
+- **登入**: `POST {BACKEND_BASE_URL}/api/v1/auth/login`
+- **提交問題回報**: `POST {BACKEND_BASE_URL}/api/v1/issue`（需認證）
+
+詳細的 API 規格請參考 [API 文檔](#api-文檔)。
+
+---
+
+## 常見問題排查
+
+### 1. 資料庫連線失敗
+- **錯誤訊息**：`Error: ER_ACCESS_DENIED_ERROR: Access denied for user...`
+- **解決方法**：
+  - 檢查 `.env` 中的 `DB_USER` 和 `DB_PASSWORD` 是否正確。
+  - 確保 MySQL 服務正在運行：`mysql.server start`（macOS）或 `sudo systemctl start mysql`（Linux）。
+  - 確認資料庫 `anhen_health_assistant` 已創建。
+
+### 2. 郵件寄送失敗
+- **錯誤訊息**：`寄送問題回報郵件失敗: ...`
+- **解決方法**：
+  - 檢查 `.env` 中的 `EMAIL_*` 配置是否正確。
+  - 如果使用 Gmail，確保 `EMAIL_PASS` 是應用程式密碼，而不是帳戶密碼。
+  - 確認網路連線是否正常，SMTP 服務器是否可訪問。
+
+### 3. JWT 驗證失敗
+- **錯誤訊息**：`無效的認證憑證`
+- **解決方法**：
+  - 確保 `.env` 中的 `JWT_SECRET` 已設置，且與生成 JWT 時使用的密鑰一致。
+  - 檢查請求頭是否包含正確的 `Authorization: Bearer <token>`。
+
+### 4. 伺服器啟動失敗
+- **錯誤訊息**：`Error: listen EADDRINUSE: address already in use :::3000`
+- **解決方法**：
+  - 端口 3000 已被占用，嘗試更改 `.env` 中的 `PORT` 為其他值（例如 3001）。
+  - 終止占用 3000 端口的進程
+
+---
+
+
+# API 文檔
+base URL: `{BACKEND_BASE_URL}/api/v1`
+
+## 1. 用戶註冊
+### `POST /register`
+註冊新用戶。
+
+#### 請求參數
+- **Content-Type**: `application/json`
+- **Body**:
+  ```json
+    {
+    "username": "string (最大50字元)",
+    "password": "string",
+    "email": "string (最大100字元，有效電子郵件格式)",
+    "display_name": "string (最大50字元)"
+    }
+  ```
+
+#### 成功回應
+- **狀態碼**: `201 Created`
+- **Body**:
+  ```json
+  {
+    "message": "註冊成功",
+    "user_id": "integer"
+  }
+  ```
+
+#### 錯誤回應
+- `400 Bad Request`:
+  ```json
+  {
+    "error": {
+      "message": "請提供帳戶、密碼、電子郵件和使用者名稱"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "帳戶、電子郵件或使用者名稱超出長度限制"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "電子郵件格式無效"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "帳戶或電子郵件已存在"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "error": {
+      "message": "資料庫連線失敗，請檢查配置"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "伺服器錯誤",
+      "details": {
+        "code": "string",
+        "message": "string"
+      }
+    }
+  }
+  ```
+
+---
+
+## 2. 用戶登入
+### `POST /login`
+用戶登入並獲取JWT令牌。
+
+#### 請求參數
+- **Content-Type**: `application/json`
+- **Body**:
+  ```json
+  {
+    "username": "string",
+    "password": "string"
+  }
+  ```
+
+#### 成功回應
+- **狀態碼**: `200 OK`
+- **Body**:
+  ```json
+  {
+    "message": "登入成功",
+    "token": "string"
+  }
+  ```
+
+#### 錯誤回應
+- `400 Bad Request`:
+  ```json
+  {
+    "error": {
+      "message": "請提供用戶名和密碼"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "用戶不存在"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "密碼錯誤"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "error": {
+      "message": "伺服器錯誤",
+      "details": {
+        "code": "string",
+        "message": "string"
+      }
+    }
+  }
+  ```
+
+---
+
+## 3. 提交問題回報
+### `POST /issue`
+提交問題回報（需認證）。
+#### 請求參數
+- **Headers**:
+  ```
+  Authorization: Bearer <token>
+  ```
+- **Content-Type**: `application/json`
+- **Body**:
+  ```json
+  {
+    "issue_description": "string (最大1000字元)"
+  }
+  ```
+
+#### 成功回應
+- **狀態碼**: `201 Created`
+- **Body**:
+  ```json
+  {
+    "message": "問題已回報",
+    "report_id": "integer"
+  }
+  ```
+
+#### 錯誤回應
+- `400 Bad Request`:
+  ```json
+  {
+    "error": {
+      "message": "請提供問題描述"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "問題描述長度不能超過1000字元"
+    }
+  }
+  ```
+- `401 Unauthorized`:
+  ```json
+  {
+    "error": {
+      "message": "未提供認證憑證"
+    }
+  }
+  ```
+- `403 Forbidden`:
+  ```json
+  {
+    "error": {
+      "message": "認證憑證已過期，請重新登入"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "無效的認證憑證"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "error": {
+      "message": "伺服器錯誤",
+      "details": {
+        "code": "string",
+        "message": "string"
+      }
+    }
+  }
+  ```
+
+---
+
