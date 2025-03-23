@@ -57,7 +57,7 @@ router.post('/login', async (req, res) => {
 
   // 輸入驗證
   if (!username || !password) {
-    return res.status(400).json({ message: '請提供用戶名和密碼' });
+    return res.status(400).json({ error: { message: '請提供用戶名和密碼' } });
   }
 
   try {
@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
     // console.log('查詢到的用戶:', rows);
 
     if (rows.length === 0) {
-      return res.status(400).json({ message: '用戶不存在' });
+      return res.status(400).json({ error: { message: '用戶不存在' } });
     }
 
     const user = rows[0];
@@ -74,7 +74,7 @@ router.post('/login', async (req, res) => {
     // 比對密碼
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: '密碼錯誤' });
+      return res.status(400).json({ error: { message: '密碼錯誤' } });
     }
 
     // 生成 JWT
@@ -83,10 +83,12 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('登入錯誤:', error);
     res.status(500).json({
-      message: '伺服器錯誤',
       error: {
-        code: error.code,
-        message: error.message
+        message: '伺服器錯誤',
+        details: {
+          code: error.code,
+          message: error.message
+        }
       }
     });
   }
