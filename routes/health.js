@@ -3,6 +3,18 @@ const router = express.Router();
 const pool = require('../config/database');
 const authenticateToken = require('../middleware/auth');
 
+function formatDateTime(date) {
+  const pad = n => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+    `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+// 新增 formatDate 函數（僅日期）
+function formatDate(date) {
+  const pad = n => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 
 // 讀取基本健康資訊
 router.get('/basic', authenticateToken, async (req, res) => {
@@ -28,7 +40,7 @@ router.get('/basic', authenticateToken, async (req, res) => {
     // 準備回應資料
     const responseData = {
       ...healthRows[0],
-      birthday: new Date(healthRows[0].birthday).toISOString().split('T')[0] // 轉成 YYYY-MM-DD 格式
+      birthday: formatDate(new Date(healthRows[0].birthday))
     };
 
     // 成功回應
@@ -109,7 +121,7 @@ router.post('/basic', authenticateToken, async (req, res) => {
 
     const responseData = {
       ...updatedRows[0],
-      birthday: new Date(updatedRows[0].birthday).toISOString().split('T')[0]
+      birthday: formatDate(new Date(updatedRows[0].birthday))
     };
 
     res.status(201).json({
@@ -125,5 +137,6 @@ router.post('/basic', authenticateToken, async (req, res) => {
     });
   }
 });
+
 
 module.exports = router;
