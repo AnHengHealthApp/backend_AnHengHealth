@@ -3,14 +3,13 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主機： 127.0.0.1
--- 產生時間： 2025-03-23 07:07:45
+-- 產生時間： 2025-04-14
 -- 伺服器版本： 10.4.32-MariaDB
 -- PHP 版本： 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
-SET time_zone = "+00:00";
-
+SET time_zone = "+08:00"; -- 改為台灣時區
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -33,6 +32,7 @@ CREATE TABLE `basic_health_info` (
   `height` decimal(5,2) DEFAULT NULL COMMENT '身高(cm)',
   `weight` decimal(5,2) DEFAULT NULL COMMENT '體重(kg)',
   `birthday` date DEFAULT NULL COMMENT '生日',
+  `gender` TINYINT DEFAULT NULL COMMENT '0: male, 1: female, 2: other',
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
@@ -40,8 +40,8 @@ CREATE TABLE `basic_health_info` (
 -- 傾印資料表的資料 `basic_health_info`
 --
 
-INSERT INTO `basic_health_info` (`health_id`, `user_id`, `height`, `weight`, `birthday`, `updated_at`) VALUES
-(1, 1, 175.50, 70.00, '1987-03-11', '2025-03-09 12:11:59');
+INSERT INTO `basic_health_info` (`health_id`, `user_id`, `height`, `weight`, `birthday`, `gender`, `updated_at`) VALUES
+(1, 1, 175.50, 70.00, '1987-03-11', 0, '2025-03-09 12:11:59');
 
 -- --------------------------------------------------------
 
@@ -53,8 +53,8 @@ CREATE TABLE `blood_sugar_records` (
   `record_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `measurement_date` datetime DEFAULT NULL COMMENT '測量時間',
-  `fasting_blood_sugar` decimal(5,2) DEFAULT NULL COMMENT '空腹血糖(mg/dl)',
-  `postprandial_blood_sugar` decimal(5,2) DEFAULT NULL COMMENT '餐後血糖(mg/dl)',
+  `measurement_context` ENUM('fasting', 'before_meal', 'after_meal') NOT NULL DEFAULT 'fasting' COMMENT '測量情境',
+  `blood_sugar` decimal(5,2) DEFAULT NULL COMMENT '血糖值(mg/dl)',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
@@ -62,8 +62,8 @@ CREATE TABLE `blood_sugar_records` (
 -- 傾印資料表的資料 `blood_sugar_records`
 --
 
-INSERT INTO `blood_sugar_records` (`record_id`, `user_id`, `measurement_date`, `fasting_blood_sugar`, `postprandial_blood_sugar`, `created_at`) VALUES
-(1, 1, '2025-03-09 08:00:00', 90.50, 120.00, '2025-03-09 11:38:01');
+INSERT INTO `blood_sugar_records` (`record_id`, `user_id`, `measurement_date`, `measurement_context`, `blood_sugar`, `created_at`) VALUES
+(1, 1, '2025-03-09 08:00:00', 'fasting', 90.50, '2025-03-09 11:38:01');
 
 -- --------------------------------------------------------
 
@@ -124,7 +124,7 @@ CREATE TABLE `users` (
   `display_name` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `avatar` BLOB DEFAULT NULL,
+  `avatar` MEDIUMBLOB DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
