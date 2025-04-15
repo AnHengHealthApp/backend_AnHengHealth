@@ -55,7 +55,7 @@ CREATE TABLE `blood_sugar_records` (
   `record_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `measurement_date` datetime DEFAULT NULL COMMENT '測量時間',
-  `measurement_context` ENUM('fasting', 'before_meal', 'after_meal') NOT NULL DEFAULT 'fasting' COMMENT '測量情境',
+  `measurement_context` TINYINT NOT NULL DEFAULT 0 COMMENT '測量情境: 0=空腹, 1=餐前, 2=餐後',
   `blood_sugar` decimal(5,2) DEFAULT NULL COMMENT '血糖值(mg/dl)',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
