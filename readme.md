@@ -538,3 +538,185 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
 
 
 ---
+
+
+## 6. 獲取基本健康資訊
+
+#### `GET /health/basic`
+獲取用戶的基本健康資訊（需認證）。
+
+##### 請求參數
+- **Headers**:
+  ```
+  Authorization: Bearer <token>
+  ```
+- **Query Parameters**: 無
+
+##### 成功回應
+- **狀態碼**: `200 OK`
+- **Body**:
+  ```json
+  {
+    "status": "success",
+    "message": "成功獲取健康資訊",
+    "data": {
+      "health_id": "integer",
+      "user_id": "integer",
+      "height": "number",
+      "weight": "number",
+      "birthday": "string (YYYY-MM-DD)",
+      "gender": "integer (0=男, 1=女, 2=其他) | null"
+    }
+  }
+  ```
+
+##### 錯誤回應
+- `401 Unauthorized`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "未提供認證憑證"
+    }
+  }
+  ```
+- `403 Forbidden`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_TOKEN",
+      "message": "無效的認證憑證"
+    }
+  }
+  ```
+- `404 Not Found`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "未找到健康資訊，請先輸入您的身高、體重等基本健康資料"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INTERNAL_SERVER_ERROR",
+      "message": "伺服器錯誤"
+    }
+  }
+  ```
+
+
+## 7. 新增或更新基本健康資訊
+#### `POST /health/basic`
+新增或更新用戶的基本健康資訊（需認證）。
+
+##### 請求參數
+- **Headers**:
+  ```
+  Authorization: Bearer <token>
+  ```
+- **Content-Type**: `application/json`
+- **Body**:
+  ```json
+  {
+    "height": "number (100-250)",
+    "weight": "number (20-300)",
+    "birthday": "string (YYYY-MM-DD)",
+    "gender": "integer (0=男, 1=女, 2=其他) | optional"
+  }
+  ```
+
+##### 成功回應
+- **狀態碼**: `201 Created`
+- **Body**:
+  ```json
+  {
+    "status": "success",
+    "message": "基本健康資訊已更新",
+    "data": {
+      "health_id": "integer",
+      "user_id": "integer",
+      "height": "number",
+      "weight": "number",
+      "birthday": "string (YYYY-MM-DD)",
+      "gender": "integer (0=男, 1=女, 2=其他) | null"
+    }
+  }
+  ```
+
+##### 錯誤回應
+- `400 Bad Request`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_INPUT",
+      "message": "請提供身高、體重和生日"
+    }
+  }
+  ```
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INPUT_OUT_OF_RANGE",
+      "message": "身高或體重超出合理範圍"
+    }
+  }
+  ```
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_DATE_FORMAT",
+      "message": "生日格式無效，應為 YYYY-MM-DD"
+    }
+  }
+  ```
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_GENDER_INPUT",
+      "message": "性別值無效，僅接受 0（男）, 1（女）, 2（其他）"
+    }
+  }
+  ```
+- `401 Unauthorized`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "未提供認證憑證"
+    }
+  }
+  ```
+- `403 Forbidden`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_TOKEN",
+      "message": "無效的認證憑證"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INTERNAL_SERVER_ERROR",
+      "message": "伺服器錯誤"
+    }
+  }
+  ```
+
