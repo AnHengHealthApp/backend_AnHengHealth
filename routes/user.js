@@ -57,6 +57,27 @@ router.post('/avatar', authenticateToken, upload.single('avatar'), async (req, r
   }
 });
 
+// 獲取頭像 API
+router.get('/avatar', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id; // 從 JWT 獲取 user_id
 
+    const [rows] = await pool.query(
+      'SELECT avatar FROM users WHERE user_id = ?',
+      [userId]
+    );
+
+    if (rows.length === 0 || !rows[0].avatar) {
+      return res.status(404).json({ status: 'error', message: '頭像不存在' });
+    }
+
+    // 設置正確的 Content-Type（假設為 jpeg，可根據實際 mimetype 動態設置）
+    res.set('Content-Type', 'image/jpeg');
+    res.send(rows[0].avatar); // 直接傳送二進位資料
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: 'error', message: '伺服器錯誤' });
+  }
+});
 
 module.exports = router;
