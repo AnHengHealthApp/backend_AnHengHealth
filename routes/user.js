@@ -15,7 +15,7 @@ const upload = multer({
     }
     cb(null, true);
   },
-  limits: { fileSize: 15 * 1024 * 1024 } // 1MB 限制（可調整）
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB 限制
 });
 
 // 上傳頭像 API
@@ -51,7 +51,7 @@ router.post('/avatar', authenticateToken, upload.single('avatar'), async (req, r
       return res.status(400).json({ status: 'error', message: error.message });
     }
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ status: 'error', message: '檔案過大，限制 1MB' });
+      return res.status(400).json({ status: 'error', message: '檔案過大，限制 5MB' });
     }
     res.status(500).json({ status: 'error', message: '伺服器錯誤' });
   }
