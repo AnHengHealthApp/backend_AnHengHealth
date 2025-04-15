@@ -33,7 +33,9 @@ CREATE TABLE `basic_health_info` (
   `weight` decimal(5,2) DEFAULT NULL COMMENT '體重(kg)',
   `birthday` date DEFAULT NULL COMMENT '生日',
   `gender` TINYINT DEFAULT NULL COMMENT '0: male, 1: female, 2: other',
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  UNIQUE KEY `unique_user` (`user_id`)
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
