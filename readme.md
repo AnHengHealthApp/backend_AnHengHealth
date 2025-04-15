@@ -25,6 +25,7 @@
 │   └── auth.js  # JWT 認證中間件
 ├── routes/
 │   ├── auth.js           # 認證相關路由（註冊、登入、用戶資訊）
+│   ├── user.js           # 用戶 (頭像)
 │   └── report.js          # 問題回報路由
 ├── template/
 │   └── anhen_health_assistant.sql   # 資料表樣板
@@ -175,7 +176,7 @@ Server running on port 3000
 base URL: `{BACKEND_BASE_URL}/api/v1`
 
 ## 1. 用戶註冊
-### `POST /register`
+### `POST /auth/register`
 註冊新用戶。
 
 #### 請求參數
@@ -253,7 +254,7 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
 ---
 
 ## 2. 用戶登入
-### `POST /login`
+### `POST /auth/login`
 用戶登入並獲取JWT令牌。
 
 #### 請求參數
@@ -315,7 +316,7 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
 ---
 
 ## 3. 提交問題回報
-### `POST /issue`
+### `POST /report/issue`
 提交問題回報（需認證）。
 #### 請求參數
 - **Headers**:
@@ -392,5 +393,148 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
   }
   ```
 
----
 
+
+## 4. 頭像上傳
+
+### `POST /user/avatar`
+上傳或更新用戶頭像，儲存為二進位資料（需認證）。
+
+#### 請求參數
+- **Headers**:
+  ```
+  Authorization: Bearer <token>
+  ```
+- **Content-Type**: `multipart/form-data`
+- **Body**:
+  ```
+  avatar: file (jpg, png, jpeg; 最大15MB)
+  ```
+
+#### 成功回應
+- **狀態碼**: `200 OK`
+- **Body**:
+  ```json
+  {
+    "status": "success",
+    "message": "頭像上傳成功",
+    "data": {
+      "user_id": "integer"
+    }
+  }
+  ```
+
+#### 錯誤回應
+- `400 Bad Request`:
+  ```json
+  {
+    "error": {
+      "message": "請選擇一個檔案"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "無效的檔案格式，僅支援 jpg、png"
+    }
+  }
+  ```
+  ```json
+  {
+    "error": {
+      "message": "檔案過大，限制 15MB"
+    }
+  }
+  ```
+- `401 Unauthorized`:
+  ```json
+  {
+    "error": {
+      "message": "未提供認證憑證"
+    }
+  }
+  ```
+- `403 Forbidden`:
+  ```json
+  {
+    "error": {
+      "message": "無效的認證憑證"
+    }
+  }
+  ```
+- `404 Not Found`:
+  ```json
+  {
+    "error": {
+      "message": "用戶不存在"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "error": {
+      "message": "伺服器錯誤",
+      "details": {
+        "code": "unknown",
+        "message": "無法處理請求"
+      }
+    }
+  }
+  ```
+## 5. 取得頭像
+### `GET /user/avatar`
+獲取當前用戶的頭像二進位資料（需認證）。
+
+#### 請求參數
+- **Headers**:
+  ```
+  Authorization: Bearer <token>
+  ```
+
+#### 成功回應
+- **狀態碼**: `200 OK`
+- **Content-Type**: `image/jpeg` （或 `image/png`，視檔案類型而定）
+- **Body**: 圖片二進位資料
+
+#### 錯誤回應
+- `401 Unauthorized`:
+  ```json
+  {
+    "error": {
+      "message": "未提供認證憑證"
+    }
+  }
+  ```
+- `403 Forbidden`:
+  ```json
+  {
+    "error": {
+      "message": "無效的認證憑證"
+    }
+  }
+  ```
+- `404 Not Found`:
+  ```json
+  {
+    "error": {
+      "message": "頭像不存在"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "error": {
+      "message": "伺服器錯誤",
+      "details": {
+        "code": "unknown",
+        "message": "無法處理請求"
+      }
+    }
+  }
+  ```
+
+
+---
