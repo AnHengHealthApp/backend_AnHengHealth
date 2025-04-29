@@ -422,6 +422,86 @@ router.post('/vitals', authenticateToken, async (req, res) => {
   }
 });
 
+// 查詢血壓紀錄
+router.get('/vitals', authenticateToken, async (req, res) => {
+  const user_id = req.user.user_id;
+  const { start_date, end_date } = req.query;
 
+  let query = 'SELECT * FROM vital_records WHERE user_id = ?';
+  const params = [user_id];
+
+  if (start_date || end_date) {
+    if (!start_date) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: 'MISSING_START_DATE',
+          message: '請提供開始日期'
+        }
+      });
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const finalEndDate = end_date || todayStr;
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date) || !/^\d{4}-\d{2}-\d{2}$/.test(finalEndDate)) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: 'INVALID_DATE_FORMAT',
+          message: '日期格式無效，應為 YYYY-MM-DD'
+        }
+      });
+    }
+
+    const start = new Date(start_date);
+    const end = new Date(finalEndDate + ' 23:59:59');
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: 'INVALID_DATE_RANGE',
+          message: '日期範圍無效，請確認開始與結束時間'
+        }
+      });
+    }
+
+    query += ' AND measurement_date BETWEEN ? AND ?';
+    params.push(start_date + ' 00:00:00', finalEndDate + ' 23:59:59');
+  } else {
+    query += ' AND measurement_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)';
+  }
+
+  query += ' ORDER BY measurement_date DESC';
+
+  try {
+    const [rows] = await pool.query(query, params);
+
+    const responseData = rows.map(row => ({
+      vital_id: row.vital_id,
+      user_id: row.user_id,
+      measurement_date: formatDateTime(new Date(row.measurement_date)),
+      heart_rate: row.heart_rate,
+      systolic_pressure: row.systolic_pressure,
+      diastolic_pressure: row.diastolic_pressure
+    }));
+
+    res.status(200).json({
+      status: 'success',
+      message: rows.length ? '成功取得血壓紀錄' : '無符合條件的紀錄',
+      data: responseData
+    });
+  } catch (error) {
+    console.error('查詢血壓紀錄錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: error.code || 'INTERNAL_SERVER_ERROR',
+        message: '伺服器錯誤，無法取得血壓紀錄'
+      }
+    });
+  }
+});
 
 module.exports = router;
