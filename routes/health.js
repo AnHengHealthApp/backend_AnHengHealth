@@ -220,7 +220,6 @@ router.post('/bloodSugar', authenticateToken, async (req, res) => {
     const responseData = {
       ...newRecord[0],
       measurement_date: formatDateTime(new Date(newRecord[0].measurement_date)), // YYYY-MM-DD HH:mm:ss
- 
     };
 
     res.status(201).json({
@@ -241,7 +240,112 @@ router.post('/bloodSugar', authenticateToken, async (req, res) => {
 });
 
 
+// 讀取血糖記錄（根據時間段查詢）
+router.get('/bloodSugar', authenticateToken, async (req, res) => {
+  const user_id = req.user.user_id;
+  const { context, start_date, end_date } = req.query;
 
+  let query = 'SELECT record_id, user_id, measurement_date, measurement_context, blood_sugar FROM blood_sugar_records WHERE user_id = ?';
+  const params = [user_id];
+
+  if (context !== undefined && context !== '') {
+    const contextNum = Number(context);
+    if (![0, 1, 2].includes(contextNum)) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: 'INVALID_CONTEXT',
+          message: '無效的測量情境，僅接受 0（空腹）、1（餐前）、2（餐後）'
+        }
+      });
+    }
+    query += ' AND measurement_context = ?';
+    params.push(contextNum);
+  }
+
+  // 允許只提供 start_date，end_date 預設為今天
+  if (start_date || end_date) {
+    if (!start_date) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: 'MISSING_START_DATE',
+          message: '請提供開始日期'
+        }
+      });
+    }
+
+    // 預設 end_date 為今天
+    const todayStr = new Date().toISOString().slice(0, 10); // 取得今天 YYYY-MM-DD
+    const finalEndDate = end_date || todayStr;
+
+    // 驗證日期格式
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date) || !/^\d{4}-\d{2}-\d{2}$/.test(finalEndDate)) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: 'INVALID_DATE_FORMAT',
+          message: '日期格式無效，應為 YYYY-MM-DD'
+        }
+      });
+    }
+
+    const start = new Date(start_date);
+    const end = new Date(finalEndDate + ' 23:59:59');
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: 'INVALID_DATE',
+          message: '無效的日期，請提供有效的開始和結束日期'
+        }
+      });
+    }
+
+    if (start > end) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: 'INVALID_DATE_RANGE',
+          message: '開始日期不能晚於結束日期'
+        }
+      });
+    }
+
+    query += ' AND measurement_date BETWEEN ? AND ?';
+    params.push(start_date + ' 00:00:00', finalEndDate + ' 23:59:59');
+  } else {
+    query += ' AND measurement_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)';
+  }
+
+  query += ' ORDER BY measurement_date DESC';
+
+  try {
+    const [rows] = await pool.query(query, params);
+    const responseData = rows.map(row => ({
+      record_id: row.record_id,
+      user_id: row.user_id,
+      measurement_date: formatDateTime(new Date(row.measurement_date)),
+      measurement_context: row.measurement_context,
+      blood_sugar: Number(Number(row.blood_sugar).toFixed(2))
+    }));
+
+    res.status(200).json({
+      status: 'success',
+      message: rows.length ? '成功獲取血糖記錄' : '無符合條件的血糖記錄',
+      data: responseData
+    });
+  } catch (error) {
+    console.error('查詢血糖記錄錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: error.code || 'INTERNAL_SERVER_ERROR',
+        message: '伺服器錯誤，無法獲取血糖記錄'
+      }
+    });
+  }
+});
 
 
 module.exports = router;
