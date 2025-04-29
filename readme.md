@@ -720,3 +720,270 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
   }
   ```
 
+---
+
+## 8. 新增血糖記錄  
+#### `POST /bloodSugar`  
+新增使用者的血糖測量紀錄（需認證）。
+
+### 🔸 Request Headers
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+### 🔸 Request Body
+| 參數名稱             | 類型     | 必填 | 說明                                         |
+|----------------------|----------|------|----------------------------------------------|
+| measurement_date     | string   | ✅   | 測量時間，格式：`YYYY-MM-DD HH:mm:ss`        |
+| measurement_context  | integer  | ✅   | 測量情境：`0`=空腹、`1`=餐前、`2`=餐後         |
+| blood_sugar          | number   | ✅   | 血糖值（mg/dL），範圍：50.00 ~ 500.00        |
+
+### 🔸 範例 Request
+```json
+{
+  "measurement_date": "2025-04-28 08:30:00",
+  "measurement_context": 0,
+  "blood_sugar": 92.5
+}
+```
+
+### 🔸 成功回應 (201 Created)
+```json
+{
+  "status": "success",
+  "message": "血糖記錄已成功新增",
+  "data": {
+    "record_id": 77,
+    "user_id": 123,
+    "measurement_date": "2025-04-28 08:30:00",
+    "measurement_context": 0,
+    "blood_sugar": 92.5
+  }
+}
+```
+
+### 🔸 錯誤回應
+
+- 缺少欄位：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "請提供測量時間、測量情境和血糖值"
+  }
+}
+```
+
+- 測量情境錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_CONTEXT",
+    "message": "無效的測量情境，僅接受 0（空腹）、1（餐前）、2（餐後）"
+  }
+}
+```
+
+- 血糖值錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INPUT_OUT_OF_RANGE",
+    "message": "血糖值超出合理範圍（50.00-500.00 mg/dL）"
+  }
+}
+```
+
+- 時間格式錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE_FORMAT",
+    "message": "測量時間格式無效，應為 YYYY-MM-DD HH:mm:ss"
+  }
+}
+```
+
+- 無效時間：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE",
+    "message": "測量時間無效，請提供有效的日期和時間"
+  }
+}
+```
+
+- 認證錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "未提供認證憑證"
+  }
+}
+```
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "無效的認證憑證"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "伺服器錯誤，無法新增血糖記錄"
+  }
+}
+```
+
+---
+
+## 9. 查詢血糖記錄  
+#### `GET /bloodSugar`  
+依據條件查詢使用者的血糖紀錄（需認證）。
+
+### 🔸 Request Headers
+```
+Authorization: Bearer <token>
+```
+
+### 🔸 Query Parameters
+| 參數名稱     | 類型     | 必填 | 說明                                                   |
+|--------------|----------|------|--------------------------------------------------------|
+| context      | integer  | ❌   | 測量情境：`0`=空腹、`1`=餐前、`2`=餐後                 |
+| start_date   | string   | ✅   | 開始日期，格式：`YYYY-MM-DD`（提供此值則為條件查詢）   |
+| end_date     | string   | ❌   | 結束日期，格式：`YYYY-MM-DD`，預設為今天               |
+
+### 🔸 範例 Request
+```
+GET /bloodSugar?context=1&start_date=2025-04-01&end_date=2025-04-28
+```
+
+### 🔸 成功回應 (200 OK)
+```json
+{
+  "status": "success",
+  "message": "成功獲取血糖記錄",
+  "data": [
+    {
+      "record_id": 77,
+      "user_id": 123,
+      "measurement_date": "2025-04-28 08:30:00",
+      "measurement_context": 1,
+      "blood_sugar": 92.5
+    },
+    {
+      "record_id": 76,
+      "user_id": 123,
+      "measurement_date": "2025-04-20 08:15:00",
+      "measurement_context": 1,
+      "blood_sugar": 89.7
+    }
+  ]
+}
+```
+
+### 🔸 錯誤回應
+
+- 測量情境錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_CONTEXT",
+    "message": "無效的測量情境，僅接受 0（空腹）、1（餐前）、2（餐後）"
+  }
+}
+```
+
+- 缺少開始日期：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "MISSING_START_DATE",
+    "message": "請提供開始日期"
+  }
+}
+```
+
+- 日期格式錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE_FORMAT",
+    "message": "日期格式無效，應為 YYYY-MM-DD"
+  }
+}
+```
+
+- 無效日期：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE",
+    "message": "無效的日期，請提供有效的開始和結束日期"
+  }
+}
+```
+
+- 日期邏輯錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE_RANGE",
+    "message": "開始日期不能晚於結束日期"
+  }
+}
+```
+
+- 認證錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "未提供認證憑證"
+  }
+}
+```
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "無效的認證憑證"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "伺服器錯誤，無法獲取血糖記錄"
+  }
+}
+```
+
+---
