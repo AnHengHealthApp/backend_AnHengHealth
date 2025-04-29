@@ -139,4 +139,109 @@ router.post('/basic', authenticateToken, async (req, res) => {
 });
 
 
+
+// 寫入血糖記錄
+router.post('/bloodSugar', authenticateToken, async (req, res) => {
+  const { measurement_date, measurement_context, blood_sugar } = req.body;
+  const user_id = req.user.user_id;
+
+  // 驗證必填欄位
+  if (!measurement_date || measurement_context === undefined || blood_sugar === undefined) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_INPUT',
+        message: '請提供測量時間、測量情境和血糖值'
+      }
+    });
+  }
+
+  // 驗證測量情境（0: 空腹, 1: 餐前, 2: 餐後）
+  const contextNum = Number(measurement_context);
+  if (![0, 1, 2].includes(contextNum)) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_CONTEXT',
+        message: '無效的測量情境，僅接受 0（空腹）、1（餐前）、2（餐後）'
+      }
+    });
+  }
+
+  // 驗證血糖值範圍
+  
+  if (!Number.isFinite(blood_sugar) || blood_sugar < 50 || blood_sugar > 500) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INPUT_OUT_OF_RANGE',
+        message: '血糖值超出合理範圍（50.00-500.00 mg/dL）'
+      }
+    });
+  }
+
+  // 驗證日期格式
+  if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(measurement_date)) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_DATE_FORMAT',
+        message: '測量時間格式無效，應為 YYYY-MM-DD HH:mm:ss'
+      }
+    });
+  }
+
+  // 驗證日期有效性
+  const date = new Date(measurement_date);
+  if (isNaN(date.getTime())) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_DATE',
+        message: '測量時間無效，請提供有效的日期和時間'
+      }
+    });
+  }
+
+  try {
+    // 新增血糖記錄
+    const [result] = await pool.query(
+      'INSERT INTO blood_sugar_records (user_id, measurement_date, measurement_context, blood_sugar) VALUES (?, ?, ?, ?)',
+      [user_id, measurement_date, contextNum, blood_sugar]
+    );
+
+    // 查詢新增的記錄
+    const [newRecord] = await pool.query(
+      'SELECT record_id, user_id, measurement_date, measurement_context, blood_sugar FROM blood_sugar_records WHERE record_id = ?',
+      [result.insertId]
+    );
+
+    // 準備回應資料
+    const responseData = {
+      ...newRecord[0],
+      measurement_date: formatDateTime(new Date(newRecord[0].measurement_date)), // YYYY-MM-DD HH:mm:ss
+ 
+    };
+
+    res.status(201).json({
+      status: 'success',
+      message: '血糖記錄已成功新增',
+      data: responseData
+    });
+  } catch (error) {
+    console.error('錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: error.code || 'INTERNAL_SERVER_ERROR',
+        message: '伺服器錯誤，無法新增血糖記錄'
+      }
+    });
+  }
+});
+
+
+
+
+
 module.exports = router;
