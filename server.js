@@ -10,11 +10,13 @@ const API_VERSION = "v1"
 const authRoutes = require('./routes/auth');
 const reportRoutes = require('./routes/report');
 const userRoutes = require('./routes/user');
+const healthRoutes = require('./routes/health');
 
 // 路由
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
 app.use(`/api/${API_VERSION}/report`, reportRoutes);
 app.use(`/api/${API_VERSION}/user`, userRoutes);
+app.use(`/api/${API_VERSION}/health`, healthRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;

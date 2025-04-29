@@ -25,10 +25,13 @@
 │   └── auth.js  # JWT 認證中間件
 ├── routes/
 │   ├── auth.js           # 認證相關路由（註冊、登入、用戶資訊）
+│   ├── health.js           # 健康相關
 │   ├── user.js           # 用戶 (頭像)
 │   └── report.js          # 問題回報路由
 ├── template/
 │   └── anhen_health_assistant.sql   # 資料表樣板
+├── utils/
+│   └── time.js   # 時間相關function
 │
 ├── .env                  # 環境變數配置文件
 ├── .env_example          # 環境變數配置文件 樣板
@@ -538,3 +541,674 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
 
 
 ---
+
+
+## 6. 獲取基本健康資訊
+
+#### `GET /health/basic`
+獲取用戶的基本健康資訊（需認證）。
+
+##### 請求參數
+- **Headers**:
+  ```
+  Authorization: Bearer <token>
+  ```
+- **Query Parameters**: 無
+
+##### 成功回應
+- **狀態碼**: `200 OK`
+- **Body**:
+  ```json
+  {
+    "status": "success",
+    "message": "成功獲取健康資訊",
+    "data": {
+      "health_id": "integer",
+      "user_id": "integer",
+      "height": "number",
+      "weight": "number",
+      "birthday": "string (YYYY-MM-DD)",
+      "gender": "integer (0=男, 1=女, 2=其他) | null"
+    }
+  }
+  ```
+
+##### 錯誤回應
+- `401 Unauthorized`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "未提供認證憑證"
+    }
+  }
+  ```
+- `403 Forbidden`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_TOKEN",
+      "message": "無效的認證憑證"
+    }
+  }
+  ```
+- `404 Not Found`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "未找到健康資訊，請先輸入您的身高、體重等基本健康資料"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INTERNAL_SERVER_ERROR",
+      "message": "伺服器錯誤"
+    }
+  }
+  ```
+
+
+## 7. 新增或更新基本健康資訊
+#### `POST /health/basic`
+新增或更新用戶的基本健康資訊（需認證）。
+
+##### 請求參數
+- **Headers**:
+  ```
+  Authorization: Bearer <token>
+  ```
+- **Content-Type**: `application/json`
+- **Body**:
+  ```json
+  {
+    "height": "number (100-250)",
+    "weight": "number (20-300)",
+    "birthday": "string (YYYY-MM-DD)",
+    "gender": "integer (0=男, 1=女, 2=其他) | optional"
+  }
+  ```
+
+##### 成功回應
+- **狀態碼**: `201 Created`
+- **Body**:
+  ```json
+  {
+    "status": "success",
+    "message": "基本健康資訊已更新",
+    "data": {
+      "health_id": "integer",
+      "user_id": "integer",
+      "height": "number",
+      "weight": "number",
+      "birthday": "string (YYYY-MM-DD)",
+      "gender": "integer (0=男, 1=女, 2=其他) | null"
+    }
+  }
+  ```
+
+##### 錯誤回應
+- `400 Bad Request`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_INPUT",
+      "message": "請提供身高、體重和生日"
+    }
+  }
+  ```
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INPUT_OUT_OF_RANGE",
+      "message": "身高或體重超出合理範圍"
+    }
+  }
+  ```
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_DATE_FORMAT",
+      "message": "生日格式無效，應為 YYYY-MM-DD"
+    }
+  }
+  ```
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_GENDER_INPUT",
+      "message": "性別值無效，僅接受 0（男）, 1（女）, 2（其他）"
+    }
+  }
+  ```
+- `401 Unauthorized`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "未提供認證憑證"
+    }
+  }
+  ```
+- `403 Forbidden`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INVALID_TOKEN",
+      "message": "無效的認證憑證"
+    }
+  }
+  ```
+- `500 Internal Server Error`:
+  ```json
+  {
+    "status": "error",
+    "error": {
+      "code": "INTERNAL_SERVER_ERROR",
+      "message": "伺服器錯誤"
+    }
+  }
+  ```
+
+---
+
+## 8. 新增血糖記錄  
+#### `POST /bloodSugar`  
+新增使用者的血糖測量紀錄（需認證）。
+
+### 🔸 Request Headers
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+### 🔸 Request Body
+| 參數名稱             | 類型     | 必填 | 說明                                         |
+|----------------------|----------|------|----------------------------------------------|
+| measurement_date     | string   | ✅   | 測量時間，格式：`YYYY-MM-DD HH:mm:ss`        |
+| measurement_context  | integer  | ✅   | 測量情境：`0`=空腹、`1`=餐前、`2`=餐後         |
+| blood_sugar          | number   | ✅   | 血糖值（mg/dL），範圍：50.00 ~ 500.00        |
+
+### 🔸 範例 Request
+```json
+{
+  "measurement_date": "2025-04-28 08:30:00",
+  "measurement_context": 0,
+  "blood_sugar": 92.5
+}
+```
+
+### 🔸 成功回應 (201 Created)
+```json
+{
+  "status": "success",
+  "message": "血糖記錄已成功新增",
+  "data": {
+    "record_id": 77,
+    "user_id": 123,
+    "measurement_date": "2025-04-28 08:30:00",
+    "measurement_context": 0,
+    "blood_sugar": 92.5
+  }
+}
+```
+
+### 🔸 錯誤回應
+
+- 缺少欄位：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "請提供測量時間、測量情境和血糖值"
+  }
+}
+```
+
+- 測量情境錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_CONTEXT",
+    "message": "無效的測量情境，僅接受 0（空腹）、1（餐前）、2（餐後）"
+  }
+}
+```
+
+- 血糖值錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INPUT_OUT_OF_RANGE",
+    "message": "血糖值超出合理範圍（50.00-500.00 mg/dL）"
+  }
+}
+```
+
+- 時間格式錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE_FORMAT",
+    "message": "測量時間格式無效，應為 YYYY-MM-DD HH:mm:ss"
+  }
+}
+```
+
+- 無效時間：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE",
+    "message": "測量時間無效，請提供有效的日期和時間"
+  }
+}
+```
+
+- 認證錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "未提供認證憑證"
+  }
+}
+```
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "無效的認證憑證"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "伺服器錯誤，無法新增血糖記錄"
+  }
+}
+```
+
+---
+
+## 9. 查詢血糖記錄  
+#### `GET /bloodSugar`  
+依據條件查詢使用者的血糖紀錄（需認證）。
+
+### 🔸 Request Headers
+```
+Authorization: Bearer <token>
+```
+
+### 🔸 Query Parameters
+| 參數名稱     | 類型     | 必填 | 說明                                                   |
+|--------------|----------|------|--------------------------------------------------------|
+| context      | integer  | ❌   | 測量情境：`0`=空腹、`1`=餐前、`2`=餐後                 |
+| start_date   | string   | ❌   | 開始日期，格式：`YYYY-MM-DD`（提供此值則為條件查詢）   |
+| end_date     | string   | ❌   | 結束日期，格式：`YYYY-MM-DD`，預設為今天               |
+> 若未提供 `start_date`，預設查詢最近七天。
+### 🔸 範例 Request
+```
+GET /bloodSugar?context=1&start_date=2025-04-01&end_date=2025-04-28
+```
+
+### 🔸 成功回應 (200 OK)
+```json
+{
+  "status": "success",
+  "message": "成功獲取血糖記錄",
+  "data": [
+    {
+      "record_id": 77,
+      "user_id": 123,
+      "measurement_date": "2025-04-28 08:30:00",
+      "measurement_context": 1,
+      "blood_sugar": 92.5
+    },
+    {
+      "record_id": 76,
+      "user_id": 123,
+      "measurement_date": "2025-04-20 08:15:00",
+      "measurement_context": 1,
+      "blood_sugar": 89.7
+    }
+  ]
+}
+```
+
+### 🔸 錯誤回應
+
+- 測量情境錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_CONTEXT",
+    "message": "無效的測量情境，僅接受 0（空腹）、1（餐前）、2（餐後）"
+  }
+}
+```
+
+- 缺少開始日期：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "MISSING_START_DATE",
+    "message": "請提供開始日期"
+  }
+}
+```
+
+- 日期格式錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE_FORMAT",
+    "message": "日期格式無效，應為 YYYY-MM-DD"
+  }
+}
+```
+
+- 無效日期：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE",
+    "message": "無效的日期，請提供有效的開始和結束日期"
+  }
+}
+```
+
+- 日期邏輯錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE_RANGE",
+    "message": "開始日期不能晚於結束日期"
+  }
+}
+```
+
+- 認證錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "未提供認證憑證"
+  }
+}
+```
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "無效的認證憑證"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "伺服器錯誤，無法獲取血糖記錄"
+  }
+}
+```
+---
+
+## 9. 新增血壓紀錄  
+#### `POST /vitals`  
+新增使用者的血壓與心跳紀錄（需認證）。
+
+### 🔸 Request Headers
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+### 🔸 Request Body
+| 參數名稱            | 類型     | 必填 | 說明                                       |
+|---------------------|----------|------|--------------------------------------------|
+| measurement_date    | string   | ✅   | 測量時間，格式：`YYYY-MM-DD HH:mm:ss`     |
+| heart_rate          | integer  | ✅   | 心跳，範圍：30 ~ 200                       |
+| systolic_pressure   | integer  | ✅   | 收縮壓，範圍：70 ~ 250                     |
+| diastolic_pressure  | integer  | ✅   | 舒張壓，範圍：40 ~ 150                     |
+
+### 🔸 範例 Request
+```json
+POST /vitals
+{
+  "measurement_date": "2025-04-29 08:15:00",
+  "heart_rate": 76,
+  "systolic_pressure": 118,
+  "diastolic_pressure": 78
+}
+```
+
+### 🔸 成功回應 (201 Created)
+```json
+{
+  "status": "success",
+  "message": "血壓紀錄已成功新增",
+  "data": {
+    "vital_id": 101,
+    "user_id": 123,
+    "measurement_date": "2025-04-29 08:15:00",
+    "heart_rate": 76,
+    "systolic_pressure": 118,
+    "diastolic_pressure": 78
+  }
+}
+```
+
+### 🔸 錯誤回應
+
+- 缺少欄位：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "請提供測量時間、心跳、收縮壓與舒張壓"
+  }
+}
+```
+
+- 時間格式錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE_FORMAT",
+    "message": "測量時間格式無效，應為 YYYY-MM-DD HH:mm:ss"
+  }
+}
+```
+
+- 無效時間：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE",
+    "message": "無效的測量時間"
+  }
+}
+```
+
+- 數值超出範圍：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INPUT_OUT_OF_RANGE",
+    "message": "請提供合理範圍內的心跳（30~200）、收縮壓（70~250）與舒張壓（40~150）"
+  }
+}
+```
+
+- 認證錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "未提供認證憑證"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "伺服器錯誤，無法新增血壓紀錄"
+  }
+}
+```
+
+---
+
+## 10. 查詢血壓紀錄  
+#### `GET /vitals`  
+依據條件查詢使用者的血壓紀錄（需認證）。
+
+### 🔸 Request Headers
+```
+Authorization: Bearer <token>
+```
+
+### 🔸 Query Parameters
+| 參數名稱     | 類型     | 必填 | 說明                                                |
+|--------------|----------|------|-----------------------------------------------------|
+| start_date   | string   | ✅   | 開始日期，格式：`YYYY-MM-DD`（提供此值則為條件查詢）|
+| end_date     | string   | ❌   | 結束日期，格式：`YYYY-MM-DD`，預設為今天            |
+
+> 若未提供 `start_date`，預設查詢最近七天。
+
+### 🔸 範例 Request
+```
+GET /vitals?start_date=2025-04-01&end_date=2025-04-29
+```
+
+### 🔸 成功回應 (200 OK)
+```json
+{
+  "status": "success",
+  "message": "成功取得血壓紀錄",
+  "data": [
+    {
+      "vital_id": 101,
+      "user_id": 123,
+      "measurement_date": "2025-04-29 08:15:00",
+      "heart_rate": 76,
+      "systolic_pressure": 118,
+      "diastolic_pressure": 78
+    },
+    {
+      "vital_id": 100,
+      "user_id": 123,
+      "measurement_date": "2025-04-25 07:45:00",
+      "heart_rate": 80,
+      "systolic_pressure": 125,
+      "diastolic_pressure": 82
+    }
+  ]
+}
+```
+
+### 🔸 錯誤回應
+
+- 缺少開始日期：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "MISSING_START_DATE",
+    "message": "請提供開始日期"
+  }
+}
+```
+
+- 日期格式錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE_FORMAT",
+    "message": "日期格式無效，應為 YYYY-MM-DD"
+  }
+}
+```
+
+- 日期範圍無效：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_DATE_RANGE",
+    "message": "日期範圍無效，請確認開始與結束時間"
+  }
+}
+```
+
+- 認證錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "未提供認證憑證"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "伺服器錯誤，無法取得血壓紀錄"
+  }
+}
+```
+
+---
+
