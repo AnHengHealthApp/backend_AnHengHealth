@@ -2,19 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const authenticateToken = require('../middleware/auth');
-
-function formatDateTime(date) {
-  const pad = n => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
-    `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-}
-
-// 新增 formatDate 函數（僅日期）
-function formatDate(date) {
-  const pad = n => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
+const { formatDateTime, formatDate } = require('../utils/time');
 
 // 讀取基本健康資訊
 router.get('/basic', authenticateToken, async (req, res) => {
@@ -346,6 +334,94 @@ router.get('/bloodSugar', authenticateToken, async (req, res) => {
     });
   }
 });
+
+
+// 新增血壓紀錄
+router.post('/vitals', authenticateToken, async (req, res) => {
+  const { measurement_date, heart_rate, systolic_pressure, diastolic_pressure } = req.body;
+  const user_id = req.user.user_id;
+
+  // 驗證必填欄位
+  if (!measurement_date || heart_rate === undefined || systolic_pressure === undefined || diastolic_pressure === undefined) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_INPUT',
+        message: '請提供測量時間、心跳、收縮壓與舒張壓'
+      }
+    });
+  }
+
+  // 驗證格式與數值範圍
+  if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(measurement_date)) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_DATE_FORMAT',
+        message: '測量時間格式無效，應為 YYYY-MM-DD HH:mm:ss'
+      }
+    });
+  }
+
+  const date = new Date(measurement_date);
+  if (isNaN(date.getTime())) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_DATE',
+        message: '無效的測量時間'
+      }
+    });
+  }
+
+  if (
+    !Number.isInteger(heart_rate) || heart_rate < 30 || heart_rate > 200 ||
+    !Number.isInteger(systolic_pressure) || systolic_pressure < 70 || systolic_pressure > 250 ||
+    !Number.isInteger(diastolic_pressure) || diastolic_pressure < 40 || diastolic_pressure > 150
+  ) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INPUT_OUT_OF_RANGE',
+        message: '請提供合理範圍內的心跳（30~200）、收縮壓（70~250）與舒張壓（40~150）'
+      }
+    });
+  }
+
+  try {
+    const [result] = await pool.query(
+      `INSERT INTO vital_records (user_id, measurement_date, heart_rate, systolic_pressure, diastolic_pressure)
+       VALUES (?, ?, ?, ?, ?)`,
+      [user_id, measurement_date, heart_rate, systolic_pressure, diastolic_pressure]
+    );
+
+    const [newRecord] = await pool.query(
+      `SELECT * FROM vital_records WHERE vital_id = ?`,
+      [result.insertId]
+    );
+
+    const responseData = {
+      ...newRecord[0],
+      measurement_date: formatDateTime(new Date(newRecord[0].measurement_date))
+    };
+
+    res.status(201).json({
+      status: 'success',
+      message: '血壓紀錄已成功新增',
+      data: responseData
+    });
+  } catch (error) {
+    console.error('錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: error.code || 'INTERNAL_SERVER_ERROR',
+        message: '伺服器錯誤，無法新增血壓紀錄'
+      }
+    });
+  }
+});
+
 
 
 module.exports = router;
