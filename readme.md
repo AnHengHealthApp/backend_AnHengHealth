@@ -545,7 +545,7 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
 
 ## 6. 獲取基本健康資訊
 
-#### `GET /health/basic`
+### `GET /health/basic`
 獲取用戶的基本健康資訊（需認證）。
 
 ##### 請求參數
@@ -617,7 +617,7 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
 
 
 ## 7. 新增或更新基本健康資訊
-#### `POST /health/basic`
+### `POST /health/basic`
 新增或更新用戶的基本健康資訊（需認證）。
 
 ##### 請求參數
@@ -726,7 +726,7 @@ base URL: `{BACKEND_BASE_URL}/api/v1`
 ---
 
 ## 8. 新增血糖記錄  
-#### `POST /bloodSugar`  
+### `POST /health/bloodSugar`  
 新增使用者的血糖測量紀錄（需認證）。
 
 ### 🔸 Request Headers
@@ -857,7 +857,7 @@ Content-Type: application/json
 ---
 
 ## 9. 查詢血糖記錄  
-#### `GET /bloodSugar`  
+### `GET /health/bloodSugar`  
 依據條件查詢使用者的血糖紀錄（需認證）。
 
 ### 🔸 Request Headers
@@ -874,7 +874,7 @@ Authorization: Bearer <token>
 > 若未提供 `start_date`，預設查詢最近七天。
 ### 🔸 範例 Request
 ```
-GET /bloodSugar?context=1&start_date=2025-04-01&end_date=2025-04-28
+GET /health/bloodSugar?context=1&start_date=2025-04-01&end_date=2025-04-28
 ```
 
 ### 🔸 成功回應 (200 OK)
@@ -991,7 +991,7 @@ GET /bloodSugar?context=1&start_date=2025-04-01&end_date=2025-04-28
 ---
 
 ## 9. 新增血壓紀錄  
-#### `POST /vitals`  
+### `POST /health/vitals`  
 新增使用者的血壓與心跳紀錄（需認證）。
 
 ### 🔸 Request Headers
@@ -1010,7 +1010,7 @@ Content-Type: application/json
 
 ### 🔸 範例 Request
 ```json
-POST /vitals
+POST /health/vitals
 {
   "measurement_date": "2025-04-29 08:15:00",
   "heart_rate": 76,
@@ -1106,7 +1106,7 @@ POST /vitals
 ---
 
 ## 10. 查詢血壓紀錄  
-#### `GET /vitals`  
+### `GET /health/vitals`  
 依據條件查詢使用者的血壓紀錄（需認證）。
 
 ### 🔸 Request Headers
@@ -1124,7 +1124,7 @@ Authorization: Bearer <token>
 
 ### 🔸 範例 Request
 ```
-GET /vitals?start_date=2025-04-01&end_date=2025-04-29
+GET /health/vitals?start_date=2025-04-01&end_date=2025-04-29
 ```
 
 ### 🔸 成功回應 (200 OK)
@@ -1214,7 +1214,7 @@ GET /vitals?start_date=2025-04-01&end_date=2025-04-29
 
 
 ## 11. 設定用藥提醒  
-#### `POST /medication`  
+### `POST /health/medication`  
 設定使用者的用藥提醒紀錄（需認證）。
 
 ### 🔸 Request Headers
@@ -1233,7 +1233,7 @@ Content-Type: application/json
 
 ### 🔸 範例 Request
 ```json
-POST /medication
+POST /health/medication
 {
   "medication_name": "Aspirin",
   "dosage_time": "早上",
@@ -1319,7 +1319,7 @@ POST /medication
 ---
 
 ## 12. 查詢用藥提醒  
-#### `GET /medication`  
+### `GET /health/medication`  
 查詢使用者的用藥提醒紀錄（需認證）。
 
 ### 🔸 Request Headers
@@ -1335,7 +1335,7 @@ Authorization: Bearer <token>
 
 ### 🔸 範例 Request
 ```
-GET /medication
+GET /health/medication
 ```
 
 ### 🔸 成功回應 (200 OK)
@@ -1390,4 +1390,222 @@ GET /medication
 }
 ```
 
+---
 
+## 13. 刪除用藥提醒  
+### `DELETE /health/medication/:id`  
+刪除指定 ID 的用藥提醒紀錄（需認證）。
+
+### 🔸 Request Headers
+```
+Authorization: Bearer <token>
+```
+
+### 🔸 Path Parameters
+| 參數名稱     | 類型     | 必填 | 說明                                                |
+|--------------|----------|------|-----------------------------------------------------|
+| id           | integer  | ✅   | 用藥提醒的 ID                                       |
+
+### 🔸 範例 Request
+```
+DELETE /health/medication/201
+```
+
+### 🔸 成功回應 (200 OK)
+```json
+{
+  "status": "success",
+  "message": "用藥提醒已成功刪除",
+  "data": {
+    "reminder_id": 201
+  }
+}
+```
+
+### 🔸 錯誤回應
+
+- 無效的 ID：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_ID",
+    "message": "請提供有效的提醒 ID"
+  }
+}
+```
+
+- 紀錄不存在：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "找不到該用藥提醒紀錄"
+  }
+}
+```
+
+- 認證錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "未提供認證憑證"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "伺服器錯誤，無法刪除用藥提醒"
+  }
+}
+```
+
+---
+
+## 14. 忘記密碼：產生重設連結並寄送  
+### `POST /user/forgot-password-mail`  
+產生密碼重設連結並寄送至使用者註冊的電子郵件地址。
+
+### 🔸 Request Headers
+```
+Content-Type: application/json
+```
+
+### 🔸 Request Body
+| 參數名稱     | 類型     | 必填 | 說明                                       |
+|--------------|----------|------|--------------------------------------------|
+| email        | string   | ✅   | 使用者電子郵件地址，需符合 email 格式      |
+
+### 🔸 範例 Request
+```json
+POST /forgot-password-mail
+{
+  "email": "user@example.com"
+}
+```
+
+### 🔸 成功回應 (200 OK)
+```json
+{
+  "message": "已發送密碼重設連結至您的信箱"
+}
+```
+
+### 🔸 錯誤回應
+
+- 無效的電子郵件：
+```json
+{
+  "error": {
+    "message": "請提供有效的電子郵件"
+  }
+}
+```
+
+- 電子郵件不存在：
+```json
+{
+  "error": {
+    "message": "查無此電子郵件的使用者"
+  }
+}
+```
+
+- 無法寄送信件：
+```json
+{
+  "error": {
+    "message": "無法寄送重設密碼信件"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "error": {
+    "message": "伺服器錯誤，請稍後再試",
+    "details": "特定錯誤訊息"
+  }
+}
+```
+
+---
+
+## 15. 密碼重設  
+### `POST /user/reset-password`  
+使用重設 token 更新使用者的密碼。
+
+### 🔸 Request Headers
+```
+Content-Type: application/json
+```
+
+### 🔸 Request Body
+| 參數名稱       | 類型     | 必填 | 說明                                       |
+|----------------|----------|------|--------------------------------------------|
+| token          | string   | ✅   | 密碼重設 token，由忘記密碼流程生成         |
+| new_password   | string   | ✅   | 新密碼，長度至少 6 個字元                 |
+
+### 🔸 範例 Request
+```json
+POST /reset-password
+{
+  "token": "54cb97dce65bcac732ad2bdf49f54d9af59bf0571d24c93b70971d923d189f14",
+  "new_password": "newpass123"
+}
+```
+
+### 🔸 成功回應 (200 OK)
+```json
+{
+  "message": "密碼已成功重設"
+}
+```
+
+### 🔸 錯誤回應
+
+- 缺少欄位：
+```json
+{
+  "error": {
+    "message": "請提供重設 token 與新密碼"
+  }
+}
+```
+
+- 密碼長度不足：
+```json
+{
+  "error": {
+    "message": "密碼長度至少需 6 個字元"
+  }
+}
+```
+
+- 無效或過期的 token：
+```json
+{
+  "error": {
+    "message": "無效或過期的 token"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "error": {
+    "message": "伺服器錯誤，請稍後再試",
+    "details": "特定錯誤訊息"
+  }
+}
+```
