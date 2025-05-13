@@ -4,17 +4,8 @@ const pool = require('../config/database');
 const authenticateToken = require('../middleware/auth');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+const transporter = require('../utils/mailer');
 
-// 設置郵件傳輸服務
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false, //  TLS
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
 
 // 檢查環境變數
 if (!process.env.DEVELOPER_EMAIL || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
