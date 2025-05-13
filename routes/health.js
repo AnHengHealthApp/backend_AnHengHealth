@@ -621,4 +621,61 @@ router.get('/medication', authenticateToken, async (req, res) => {
   }
 });
 
+
+// 刪除用藥提醒
+router.delete('/medication/:id', authenticateToken, async (req, res) => {
+  const user_id = req.user.user_id;
+  const reminder_id = parseInt(req.params.id);
+
+  // 驗證 reminder_id 是否為有效整數
+  if (isNaN(reminder_id) || reminder_id <= 0) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_ID',
+        message: '請提供有效的提醒 ID'
+      }
+    });
+  }
+
+  try {
+    // 檢查紀錄是否存在並屬於該用戶
+    const [existingRecord] = await pool.query(
+      `SELECT * FROM medication_reminders WHERE reminder_id = ? AND user_id = ?`,
+      [reminder_id, user_id]
+    );
+
+    if (!existingRecord.length) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: 'NOT_FOUND',
+          message: '找不到該用藥提醒紀錄'
+        }
+      });
+    }
+
+    // 刪除紀錄
+    await pool.query(
+      `DELETE FROM medication_reminders WHERE reminder_id = ? AND user_id = ?`,
+      [reminder_id, user_id]
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: '用藥提醒已成功刪除',
+      data: { reminder_id }
+    });
+  } catch (error) {
+    console.error('刪除用藥提醒錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: error.code || 'INTERNAL_SERVER_ERROR',
+        message: '伺服器錯誤，無法刪除用藥提醒'
+      }
+    });
+  }
+});
+
 module.exports = router;
