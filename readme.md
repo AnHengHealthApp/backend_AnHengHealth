@@ -1212,3 +1212,182 @@ GET /vitals?start_date=2025-04-01&end_date=2025-04-29
 
 ---
 
+
+## 11. 設定用藥提醒  
+#### `POST /medication`  
+設定使用者的用藥提醒紀錄（需認證）。
+
+### 🔸 Request Headers
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+### 🔸 Request Body
+| 參數名稱          | 類型     | 必填 | 說明                                       |
+|-------------------|----------|------|--------------------------------------------|
+| medication_name   | string   | ✅   | 藥物名稱                                   |
+| dosage_time       | string   | ✅   | 用藥時間，建議值：`早上`、`中午`、`晚上`   |
+| dosage_condition  | string   | ❌   | 用藥備註，建議值：`飯前`、`飯後`、`睡前`   |
+| reminder_time     | string   | ✅   | 提醒時間，格式：`HH:mm:ss`                 |
+
+### 🔸 範例 Request
+```json
+POST /medication
+{
+  "medication_name": "Aspirin",
+  "dosage_time": "早上",
+  "dosage_condition": "飯後",
+  "reminder_time": "08:00:00"
+}
+```
+
+### 🔸 成功回應 (201 Created)
+```json
+{
+  "status": "success",
+  "message": "用藥提醒已成功設定",
+  "data": {
+    "reminder_id": 201,
+    "user_id": 123,
+    "medication_name": "Aspirin",
+    "dosage_time": "早上",
+    "dosage_condition": "飯後",
+    "reminder_time": "08:00:00",
+    "created_at": "2025-05-13T09:16:00Z"
+  }
+}
+```
+
+### 🔸 錯誤回應
+
+- 缺少欄位：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "請提供藥物名稱、用藥時間和提醒時間"
+  }
+}
+```
+
+- 提醒時間格式錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_TIME_FORMAT",
+    "message": "提醒時間格式無效，應為 HH:mm:ss"
+  }
+}
+```
+
+- 提醒時間無效：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_TIME",
+    "message": "提醒時間無效，小時應為 00-23，分秒應為 00-59"
+  }
+}
+```
+
+- 認證錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "未提供認證憑證"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "伺服器錯誤，無法設定用藥提醒"
+  }
+}
+```
+
+---
+
+## 12. 查詢用藥提醒  
+#### `GET /medication`  
+查詢使用者的用藥提醒紀錄（需認證）。
+
+### 🔸 Request Headers
+```
+Authorization: Bearer <token>
+```
+
+### 🔸 Query Parameters
+| 參數名稱     | 類型     | 必填 | 說明                                                  |
+|--------------|----------|------|-----------------------------------------------------|
+| (無)         | -        | -    | 預設查詢最所有的用藥提醒紀錄                           |
+
+
+### 🔸 範例 Request
+```
+GET /medication
+```
+
+### 🔸 成功回應 (200 OK)
+```json
+{
+  "status": "success",
+  "message": "成功取得用藥提醒",
+  "data": [
+    {
+      "reminder_id": 201,
+      "user_id": 123,
+      "medication_name": "Aspirin",
+      "dosage_time": "早上",
+      "dosage_condition": "飯後",
+      "reminder_time": "08:00:00",
+      "created_at": "2025-05-13T09:16:00Z"
+    },
+    {
+      "reminder_id": 200,
+      "user_id": 123,
+      "medication_name": "Paracetamol",
+      "dosage_time": "晚上",
+      "dosage_condition": "睡前",
+      "reminder_time": "21:30:00",
+      "created_at": "2025-05-12T14:25:00Z"
+    }
+  ]
+}
+```
+
+### 🔸 錯誤回應
+
+- 認證錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "未提供認證憑證"
+  }
+}
+```
+
+- 伺服器錯誤：
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "伺服器錯誤，無法取得用藥提醒"
+  }
+}
+```
+
+
