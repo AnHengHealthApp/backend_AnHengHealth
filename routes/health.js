@@ -504,4 +504,121 @@ router.get('/vitals', authenticateToken, async (req, res) => {
   }
 });
 
+
+// 設定用藥提醒
+router.post('/medication', authenticateToken, async (req, res) => {
+  const { medication_name, dosage_time, dosage_condition, reminder_time } = req.body;
+  const user_id = req.user.user_id;
+
+  // 驗證必填欄位
+  if (!medication_name || !dosage_time || !reminder_time) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_INPUT',
+        message: '請提供藥物名稱、用藥時間和提醒時間'
+      }
+    });
+  }
+
+
+
+  // 驗證提醒時間格式（僅 HH:mm:ss）
+  if (!/^\d{2}:\d{2}:\d{2}$/.test(reminder_time)) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_TIME_FORMAT',
+        message: '提醒時間格式無效，應為 HH:mm:ss'
+      }
+    });
+  }
+
+  // 進一步驗證時間值的有效性
+  const [hours, minutes, seconds] = reminder_time.split(':').map(Number);
+  if (hours > 23 || minutes > 59 || seconds > 59) {
+    return res.status(400).json({
+      status: 'error',
+      error: {
+        code: 'INVALID_TIME',
+        message: '提醒時間無效，小時應為 00-23，分秒應為 00-59'
+      }
+    });
+  }
+
+  try {
+    const [result] = await pool.query(
+      `INSERT INTO medication_reminders (user_id, medication_name, dosage_time, dosage_condition, reminder_time)
+       VALUES (?, ?, ?, ?, ?)`,
+      [user_id, medication_name, dosage_time, dosage_condition || null, reminder_time]
+    );
+
+    const [newRecord] = await pool.query(
+      `SELECT * FROM medication_reminders WHERE reminder_id = ?`,
+      [result.insertId]
+    );
+
+    const responseData = {
+      ...newRecord[0],
+      created_at: new Date(newRecord[0].created_at).toISOString()
+    };
+
+    res.status(201).json({
+      status: 'success',
+      message: '用藥提醒已成功設定',
+      data: responseData
+    });
+  } catch (error) {
+    console.error('錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: error.code || 'INTERNAL_SERVER_ERROR',
+        message: '伺服器錯誤，無法設定用藥提醒'
+      }
+    });
+  }
+});
+
+// 查詢用藥提醒
+router.get('/medication', authenticateToken, async (req, res) => {
+  const user_id = req.user.user_id;
+
+  let query = 'SELECT * FROM medication_reminders WHERE user_id = ?';
+  const params = [user_id];
+
+  // 使用 created_at 篩選最近7天的記錄
+  // query += ' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)';
+  query += ' ORDER BY created_at DESC';
+
+  try {
+    const [rows] = await pool.query(query, params);
+
+    const responseData = rows.map(row => ({
+      reminder_id: row.reminder_id,
+      user_id: row.user_id,
+      medication_name: row.medication_name,
+      dosage_time: row.dosage_time,
+      dosage_condition: row.dosage_condition,
+      reminder_time: row.reminder_time,
+      created_at: new Date(row.created_at).toISOString()
+    }));
+
+    res.status(200).json({
+      status: 'success',
+      message: rows.length ? '成功取得用藥提醒' : '無符合條件的用藥提醒',
+      data: responseData
+    });
+  } catch (error) {
+    console.error('查詢用藥提醒錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: error.code || 'INTERNAL_SERVER_ERROR',
+        message: '伺服器錯誤，無法取得用藥提醒'
+      }
+    });
+  }
+});
+
 module.exports = router;
