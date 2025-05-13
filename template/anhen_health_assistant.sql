@@ -106,9 +106,9 @@ CREATE TABLE IF NOT EXISTS `medication_reminders` (
   `reminder_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `medication_name` varchar(100) DEFAULT NULL COMMENT '藥物名稱',
-  `dosage_time` enum('morning','noon','evening') DEFAULT NULL COMMENT '用藥時間',
-  `dosage_condition` enum('before_meal','after_meal','before_sleep') DEFAULT NULL COMMENT '用藥備註',
-  `reminder_time` datetime DEFAULT NULL COMMENT '提醒時間',
+  `dosage_time` varchar(255) DEFAULT NULL COMMENT '用藥時間 早上 中午 晚上',
+  `dosage_condition` varchar(255) DEFAULT NULL COMMENT '用藥備註 飯前 飯後 睡前',
+  `reminder_time` TIME DEFAULT NULL COMMENT '提醒時間',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`reminder_id`),
   KEY `user_id` (`user_id`),
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `medication_reminders` (
 
 -- 正在傾印表格  anhen_health_assistant.medication_reminders 的資料：~1 rows (近似值)
 INSERT INTO `medication_reminders` (`reminder_id`, `user_id`, `medication_name`, `dosage_time`, `dosage_condition`, `reminder_time`, `created_at`) VALUES
-	(1, 1, 'Amlodipine', 'morning', 'after_meal', '2025-03-09 08:30:00', '2025-03-09 03:38:01');
+	(1, 1, 'Amlodipine', '晚上', '睡前', '08:30:00', '2025-03-09 03:38:01');
 
 -- 傾印  資料表 anhen_health_assistant.password_resets 結構
 CREATE TABLE IF NOT EXISTS `password_resets` (
