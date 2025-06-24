@@ -82,6 +82,78 @@ router.get('/avatar', authenticateToken, async (req, res) => {
   }
 });
 
+// 修改使用者資訊 API
+router.post('/profile', authenticateToken, async (req, res) => {
+    const { display_name, email } = req.body;
+    const userId = req.user.user_id; // 從 JWT 獲取 user_id
+
+    // 驗證輸入
+    if (!display_name && !email) {
+        return res.status(400).json({ status: 'error', message: '請提供要修改的名稱或電子郵件' });
+    }
+
+    // 加入長度限制驗證
+    if (display_name && display_name.length > 50) {
+        return res.status(400).json({ status: 'error', message: '使用者名稱超出長度限制（最多 50 字元）' });
+    }
+
+    if (email && email.length > 100) {
+        return res.status(400).json({ status: 'error', message: '電子郵件超出長度限制（最多 100 字元）' });
+    }
+
+    try {
+        let updateFields = [];
+        let updateValues = [];
+
+        if (display_name) {
+            updateFields.push('display_name = ?');
+            updateValues.push(display_name);
+        }
+
+        if (email) {
+            // 加入電子郵件格式驗證
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return res.status(400).json({ status: 'error', message: '電子郵件格式無效' });
+            }
+
+            // 檢查新的電子郵件是否已經被其他使用者使用
+            const [existingEmail] = await pool.query('SELECT user_id FROM users WHERE email = ? AND user_id != ?', [email, userId]);
+            if (existingEmail.length > 0) {
+                return res.status(409).json({ status: 'error', message: '此電子郵件已被註冊' });
+            }
+            updateFields.push('email = ?');
+            updateValues.push(email);
+        }
+
+        if (updateFields.length === 0) {
+            return res.status(400).json({ status: 'error', message: '沒有提供有效的更新欄位' });
+        }
+
+        updateValues.push(userId); 
+
+        const query = `UPDATE users SET ${updateFields.join(', ')} WHERE user_id = ?`;
+        const [result] = await pool.query(query, updateValues);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ status: 'error', message: '用戶不存在或沒有資料被修改' });
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: '使用者資訊更新成功',
+            data: {
+                user_id: userId,
+                display_name: display_name || req.user.display_name, // 返回更新後或原有的值
+                email: email || req.user.email
+            }
+        });
+
+    } catch (error) {
+        console.error('更新使用者資訊錯誤:', error);
+        res.status(500).json({ status: 'error', message: '伺服器錯誤', details: error.message });
+    }
+});
+
 
 // 忘記密碼：產生重設連結並寄送
 router.post('/forgot-password-mail', async (req, res) => {

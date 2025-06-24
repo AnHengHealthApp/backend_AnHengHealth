@@ -1609,3 +1609,106 @@ POST /reset-password
   }
 }
 ```
+
+-----
+
+
+## 16. 修改使用者資訊
+### `POST /user/profile`
+修改用戶的顯示名稱和或電子郵件（需認證）。
+
+#### 請求參數
+
+  - **Headers**:
+    ```
+    Authorization: Bearer <token>
+    ```
+  - **Content-Type**: `application/json`
+  - **Body**:
+    ```json
+    {
+      //display_name與email 至少需要提供其中一項
+      "display_name": "string", // 選填，最大長度 50
+      "email": "string"        // 選填，有效電子郵件格式，最大長度 100
+    }
+    ```
+
+#### 成功回應
+
+  - **狀態碼**: `200 OK`
+  - **Body**:
+    ```json
+    {
+      "status": "success",
+      "message": "使用者資訊更新成功",
+      "data": {
+        "user_id": "integer",
+        "display_name": "string",
+        "email": "string"
+      }
+    }
+    ```
+
+#### 錯誤回應
+
+  - `400 Bad Request`:
+    ```json
+    {
+      "status": "error",
+      "message": "請提供要修改的名稱或電子郵件"
+    }
+    ```
+    ```json
+    {
+      "status": "error",
+      "message": "使用者名稱超出長度限制（最多 50 字元）"
+    }
+    ```
+    ```json
+    {
+      "status": "error",
+      "message": "電子郵件超出長度限制（最多 100 字元）"
+    }
+    ```
+    ```json
+    {
+      "status": "error",
+      "message": "電子郵件格式無效"
+    }
+    ```
+    ```json
+    {
+      "status": "error",
+      "message": "沒有提供有效的更新欄位"
+    }
+    ```
+  - `401 Unauthorized`:
+    ```json
+    {
+      "error": {
+        "message": "未提供認證憑證"
+      }
+    }
+    ```
+  - `404 Not Found`:
+    ```json
+    {
+      "status": "error",
+      "message": "用戶不存在或沒有資料被修改"
+    }
+    ```
+  - `409 Conflict`:
+    ```json
+    {
+      "status": "error",
+      "message": "此電子郵件已被註冊"
+    }
+    ```
+  - `500 Internal Server Error`:
+    ```json
+    {
+      "status": "error",
+      "message": "伺服器錯誤",
+      "details": "string"
+    }
+    ```
