@@ -178,7 +178,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 
     // 準備回應資料
     const responseData = {
-      displayName: rows[0].display_name,
+      display_name: rows[0].display_name,
     };
 
     // 成功回應
