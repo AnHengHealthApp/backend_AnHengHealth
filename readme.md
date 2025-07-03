@@ -1712,3 +1712,65 @@ POST /reset-password
       "details": "string"
     }
     ```
+
+
+-----
+
+## 17\. 獲取使用者個人資料
+
+### `GET /profile`
+
+用於獲取已認證使用者的個人資料，返回其 **username**。
+
+#### 請求參數
+
+  - **Headers**:
+    ```
+    Authorization: Bearer <token>
+    ```
+  - **Content-Type**: 無
+
+#### 成功回應
+
+  - **狀態碼**: `200 OK`
+  - **Body**:
+    ```json
+    {
+      "status": "success",
+      "message": "成功獲取使用者個人資料",
+      "data": {
+        "username": "string"
+      }
+    }
+    ```
+
+#### 錯誤回應
+
+  - `401 Unauthorized`:
+    ```json
+    {
+      "error": {
+        "message": "未提供認證憑證"
+      }
+    }
+    ```
+  - `404 Not Found`:
+    ```json
+    {
+      "status": "error",
+      "error": {
+        "code": "USER_NOT_FOUND",
+        "message": "找不到使用者資料"
+      }
+    }
+    ```
+  - `500 Internal Server Error`:
+    ```json
+    {
+      "status": "error",
+      "error": {
+        "code": "INTERNAL_SERVER_ERROR",
+        "message": "伺服器錯誤，無法獲取使用者個人資料"
+      }
+    }
+    ```
