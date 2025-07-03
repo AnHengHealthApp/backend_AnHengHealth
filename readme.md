@@ -1720,7 +1720,7 @@ POST /reset-password
 
 ### `GET /user/profile`
 
-用於獲取已認證使用者的個人資料，返回其 **username**。
+用於獲取已認證使用者的個人資料，返回其 **display_name**。
 
 #### 請求參數
 
@@ -1739,7 +1739,7 @@ POST /reset-password
       "status": "success",
       "message": "成功獲取使用者個人資料",
       "data": {
-        "username": "string"
+        "display_name": "string"
       }
     }
     ```
