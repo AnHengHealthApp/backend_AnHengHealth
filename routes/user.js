@@ -154,6 +154,51 @@ router.post('/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// 獲取使用者個人資料（username）
+router.get('/profile', authenticateToken, async (req, res) => {
+  const user_id = req.user.user_id; // 從 JWT 獲取 user_id
+
+  try {
+    // 查詢使用者資料
+    const [rows] = await pool.query(
+      'SELECT username FROM users WHERE user_id = ?',
+      [user_id]
+    );
+
+    // 檢查是否找到使用者
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: '找不到使用者資料'
+        }
+      });
+    }
+
+    // 準備回應資料
+    const responseData = {
+      username: rows[0].username
+    };
+
+    // 成功回應
+    res.status(200).json({
+      status: 'success',
+      message: '成功獲取使用者個人資料',
+      data: responseData
+    });
+  } catch (error) {
+    console.error('查詢使用者個人資料錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: error.code || 'INTERNAL_SERVER_ERROR',
+        message: '伺服器錯誤，無法獲取使用者個人資料'
+      }
+    });
+  }
+});
+
 
 // 忘記密碼：產生重設連結並寄送
 router.post('/forgot-password-mail', async (req, res) => {
