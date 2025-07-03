@@ -1718,7 +1718,7 @@ POST /reset-password
 
 ## 17\. 獲取使用者個人資料
 
-### `GET /profile`
+### `GET /user/profile`
 
 用於獲取已認證使用者的個人資料，返回其 **username**。
 
