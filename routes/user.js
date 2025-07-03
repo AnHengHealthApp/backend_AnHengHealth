@@ -154,14 +154,14 @@ router.post('/profile', authenticateToken, async (req, res) => {
     }
 });
 
-// 獲取使用者個人資料（username）
+// 獲取使用者個人資料（display_name）
 router.get('/profile', authenticateToken, async (req, res) => {
   const user_id = req.user.user_id; // 從 JWT 獲取 user_id
 
   try {
     // 查詢使用者資料
     const [rows] = await pool.query(
-      'SELECT username FROM users WHERE user_id = ?',
+      'SELECT display_name FROM users WHERE user_id = ?',
       [user_id]
     );
 
@@ -178,7 +178,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 
     // 準備回應資料
     const responseData = {
-      username: rows[0].username
+      displayName: rows[0].display_name,
     };
 
     // 成功回應
