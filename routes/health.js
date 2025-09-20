@@ -3,6 +3,11 @@ const router = express.Router();
 const pool = require('../config/database');
 const authenticateToken = require('../middleware/auth');
 const { formatDateTime, formatDate } = require('../utils/time');
+const contextMap = {
+  0: 'fasting',
+  1: 'before_meal',
+  2: 'after_meal'
+};
 
 // 讀取基本健康資訊
 router.get('/basic', authenticateToken, async (req, res) => {
@@ -132,7 +137,7 @@ router.post('/basic', authenticateToken, async (req, res) => {
 router.post('/bloodSugar', authenticateToken, async (req, res) => {
   const { measurement_date, measurement_context, blood_sugar } = req.body;
   const user_id = req.user.user_id;
-
+  
   // 驗證必填欄位
   if (!measurement_date || measurement_context === undefined || blood_sugar === undefined) {
     return res.status(400).json({
@@ -146,7 +151,7 @@ router.post('/bloodSugar', authenticateToken, async (req, res) => {
 
   // 驗證測量情境（0: 空腹, 1: 餐前, 2: 餐後）
   const contextNum = Number(measurement_context);
-  if (![0, 1, 2].includes(contextNum)) {
+  if (!(contextNum in contextMap)) {
     return res.status(400).json({
       status: 'error',
       error: {
@@ -195,7 +200,7 @@ router.post('/bloodSugar', authenticateToken, async (req, res) => {
     // 新增血糖記錄
     const [result] = await pool.query(
       'INSERT INTO blood_sugar_records (user_id, measurement_date, measurement_context, blood_sugar) VALUES (?, ?, ?, ?)',
-      [user_id, measurement_date, contextNum, blood_sugar]
+      [user_id, measurement_date, contextMap[contextNum], blood_sugar]
     );
 
     // 查詢新增的記錄
@@ -238,7 +243,7 @@ router.get('/bloodSugar', authenticateToken, async (req, res) => {
 
   if (context !== undefined && context !== '') {
     const contextNum = Number(context);
-    if (![0, 1, 2].includes(contextNum)) {
+    if (!(contextNum in contextMap)) {
       return res.status(400).json({
         status: 'error',
         error: {
@@ -248,7 +253,7 @@ router.get('/bloodSugar', authenticateToken, async (req, res) => {
       });
     }
     query += ' AND measurement_context = ?';
-    params.push(contextNum);
+    params.push(contextMap[contextNum]);
   }
 
   // 允許只提供 start_date，end_date 預設為今天
