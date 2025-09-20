@@ -50,11 +50,11 @@
 ```
 ---
 
----
 
 ## 架設步驟(Docker)
-### 0. 安裝好Docker
+### 0. 安裝好Docker、Docker Compose
 [Windows 11 安裝Docker教學](https://hackmd.io/@hexschool/HyvXTHJm0#Windows-11-%E5%AE%89%E8%A3%9D)
+
 ### 1. 克隆專案
 將專案克隆到本地：
 
