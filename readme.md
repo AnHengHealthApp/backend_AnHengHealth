@@ -1774,3 +1774,108 @@ POST /reset-password
       }
     }
     ```
+
+
+## 18\. 與 AI 伺服器溝通
+
+### `POST /ai/chat`
+
+將用戶訊息結合自動取得的健康資料（身高、體重、年齡、性別、最近 7 天的血糖與血壓紀錄）格式化為字串，傳送至外部 AI 伺服器，並返回 AI 的回應（需認證）。
+
+#### 請求參數
+
+  - **Headers**:
+    ```
+    Authorization: Bearer <token>
+    Content-Type: application/json
+    ```
+  - **Body**:
+    ```json
+    {
+      "message": "string"
+    }
+    ```
+
+#### 成功回應
+
+  - **狀態碼**: `200 OK`
+  - **Body**:
+    ```json
+    {
+      "status": "success",
+      "message": "AI 回應取得成功",
+      "data": {
+        "response": "string"
+      }
+    }
+    ```
+
+#### 錯誤回應
+
+  - `400 Bad Request`:
+    ```json
+    {
+      "status": "error",
+      "error": {
+        "code": "INVALID_INPUT",
+        "message": "請提供有效的 message 字串"
+      }
+    }
+    ```
+  - `401 Unauthorized`:
+    ```json
+    {
+      "error": {
+        "message": "未提供認證憑證"
+      }
+    }
+    ```
+  - `404 Not Found`:
+    ```json
+    {
+      "status": "error",
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "未找到用戶健康資訊，請先輸入基本健康資料"
+      }
+    }
+    ```
+  - `500 Internal Server Error`:
+    ```json
+    {
+      "status": "error",
+      "error": {
+        "code": "DATABASE_ERROR",
+        "message": "無法取得健康資料，請檢查資料庫配置"
+      }
+    }
+    ```
+    ```json
+    {
+      "status": "error",
+      "error": {
+        "code": "AI_API_ERROR",
+        "message": "AI 伺服器錯誤",
+        "details": {}
+      }
+    }
+    ```
+    ```json
+    {
+      "status": "error",
+      "error": {
+        "code": "INTERNAL_SERVER_ERROR",
+        "message": "無法連線到 AI 伺服器，請檢查配置"
+      }
+    }
+    ```
+  - `408 Request Timeout`:
+    ```json
+    {
+      "status": "error",
+      "error": {
+        "code": "REQUEST_TIMEOUT",
+        "message": "請求 AI 伺服器超時"
+      }
+    }
+    ```
