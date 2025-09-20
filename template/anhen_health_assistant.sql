@@ -26,15 +26,6 @@ CREATE TABLE IF NOT EXISTS `basic_health_info` (
   `height` decimal(5,2) DEFAULT NULL COMMENT '身高(cm)',
   `weight` decimal(5,2) DEFAULT NULL COMMENT '體重(kg)',
   `birthday` date DEFAULT NULL COMMENT '生日',
-<<<<<<< Updated upstream
-  `gender` TINYINT DEFAULT NULL COMMENT '0: male, 1: female, 2: other',
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
---
--- 傾印資料表的資料 `basic_health_info`
---
-=======
   `gender` tinyint DEFAULT NULL COMMENT '0: male, 1: female, 2: other',
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`health_id`),
@@ -42,7 +33,6 @@ CREATE TABLE IF NOT EXISTS `basic_health_info` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `basic_health_info_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3;
->>>>>>> Stashed changes
 
 -- 正在傾印表格  anhen_health_assistant.basic_health_info 的資料：~1 rows (近似值)
 INSERT INTO `basic_health_info` (`health_id`, `user_id`, `height`, `weight`, `birthday`, `gender`, `updated_at`) VALUES
@@ -54,11 +44,7 @@ CREATE TABLE IF NOT EXISTS `blood_sugar_records` (
   `record_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `measurement_date` datetime DEFAULT NULL COMMENT '測量時間',
-<<<<<<< Updated upstream
   `measurement_context` ENUM('fasting', 'before_meal', 'after_meal') NOT NULL DEFAULT 'fasting' COMMENT '測量情境',
-=======
-  `measurement_context` tinyint NOT NULL DEFAULT '0' COMMENT '測量情境: 0=空腹, 1=餐前, 2=餐後',
->>>>>>> Stashed changes
   `blood_sugar` decimal(5,2) DEFAULT NULL COMMENT '血糖值(mg/dl)',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`record_id`),
