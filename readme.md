@@ -20,24 +20,33 @@
 ```
 /
 ├── config/
-│   └── database.js        # 資料庫連線
+│   └── database.js              # 資料庫連線
 ├── middleware/
-│   └── auth.js  # JWT 認證中間件
+│   └── auth.js                  # JWT 認證中間件
 ├── routes/
-│   ├── auth.js           # 認證相關路由（註冊、登入、用戶資訊）
-│   ├── health.js           # 健康相關
-│   ├── user.js           # 用戶 (頭像)
-│   └── report.js          # 問題回報路由
+│   ├── ai.js                    # AI 路由
+│   ├── auth.js                  # 認證相關路由（註冊、登入、用戶資訊）
+│   ├── health.js                # 健康相關路由
+│   ├── user.js                  # 用戶（頭像上傳/管理）
+│   └── report.js                # 問題回報路由
 ├── template/
 │   └── anhen_health_assistant.sql   # 資料表樣板
 ├── utils/
-│   └── time.js   # 時間相關function
+│   ├── mailer.js                # 寄送郵件功能
+│   └── time.js                  # 時間相關 function
+├── public/
+│   └── reset_password.html       # 密碼重設頁面
 │
-├── .env                  # 環境變數配置文件
-├── .env_example          # 環境變數配置文件 樣板
-├── server.js             # server
-├── package.json          # 專案依賴和腳本
-└── README.md             # 專案說明文件
+├── .env                         # 環境變數配置文件
+├── .env_example                 # 環境變數配置文件樣板
+├── .gitignore                   # Git 忽略規則
+├── docker-compose.yml           # Docker Compose 配置
+├── dockerfile                   # Docker 建置檔
+├── server.js                    # 伺服器主程式
+├── package.json                 # 專案依賴和腳本
+├── package-lock.json            # 依賴鎖定檔
+└── README.md                    # 專案說明文件
+
 ```
 
 ---
@@ -59,6 +68,7 @@ cd anhen-health-assistant
 npm install
 ```
 
+
 #### 依賴列表
 - `express`: Web 框架
 - `mysql2`: MySQL 資料庫驅動
@@ -66,6 +76,12 @@ npm install
 - `bcrypt`: 密碼加密
 - `nodemailer`: 電子郵件寄送
 - `dotenv`: 環境變數管理
+- `axios`: 用於向外部 AI 伺服器發送 HTTP 請求
+- `moment`: 日期和時間處理
+- `moment-timezone`: 時區支持
+- `multer`: 檔案上傳處理
+
+
 
 ### 3. 設置資料庫
 #### 3.1 安裝並啟動 MySQL
@@ -89,28 +105,8 @@ CREATE DATABASE anhen_health_assistant;
 
 
 ### 4. 設置環境變數
-在專案根目錄下創建 `.env` 檔案，並添加以下環境變數：
+在專案根目錄下創建 `.env` 檔案，可複製`.env_example`來修改，並添加以下環境變數：
 
-```env
-# 伺服器端口
-PORT=3000
-
-# 資料庫配置
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=anhen_health_assistant
-
-# JWT 密鑰
-JWT_SECRET=your_jwt_secret_key
-
-# 郵件服務配置（以 Gmail 為例）
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
-DEVELOPER_EMAIL=developer_email@example.com
-```
 
 #### 環境變數說明
 - `PORT`: 伺服器運行的端口，預設為 3000。
@@ -119,6 +115,9 @@ DEVELOPER_EMAIL=developer_email@example.com
 - `EMAIL_*`: 郵件服務配置，用於寄送問題回報通知。
   - 如果使用 Gmail，`EMAIL_PASS` 應為應用程式密碼（App Password），請參考 [Gmail 應用程式密碼設置](https://support.google.com/accounts/answer/185833)。
 - `DEVELOPER_EMAIL`: 接收問題回報通知的開發者信箱。
+- `FRONTEND_BASE_URL`: 前端應用程式基礎 URL，用於生成連結或回調。
+- `AI_API_URL`: AI 伺服器 API 基礎 URL，用於 `/api/v1/ai/chat` 端點的外部請求。
+
 
 ### 5. 啟動伺服器
 運行以下命令啟動伺服器：
