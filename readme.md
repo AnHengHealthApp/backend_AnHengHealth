@@ -48,6 +48,193 @@
 └── README.md                    # 專案說明文件
 
 ```
+---
+
+---
+
+## 架設步驟(Docker)
+
+### 1. 克隆專案
+將專案克隆到本地：
+
+```bash
+git clone https://github.com/AnHengHealthApp/backend_AnHengHealth.git
+cd backend_AnHengHealth
+```
+
+### 2. 建立 .dockerignore
+在專案根目錄創建 `.dockerignore`，避免建置不必要檔案：
+
+```plaintext
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+logs
+.DS_Store
+```
+
+### 3. 建立 Dockerfile
+在專案根目錄創建 `Dockerfile`：
+
+```dockerfile
+# 使用官方 Node.js 20 LTS 映像作為基礎
+FROM node:20
+
+# 設定工作目錄
+WORKDIR /app
+
+# 複製 package.json 和 package-lock.json
+COPY package*.json ./
+
+# 安裝依賴
+RUN npm install
+
+# 複製專案所有檔案
+COPY . .
+
+# 暴露應用端口
+EXPOSE 3000
+
+# 啟動應用
+CMD ["npm", "start"]
+```
+
+### 4. 建立 docker-compose.yml
+在專案根目錄創建 `docker-compose.yml`：
+
+```yaml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:3000"  #依據需要修改port
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=anhen_health_assistant
+      - JWT_SECRET=${JWT_SECRET}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - DEVELOPER_EMAIL=${DEVELOPER_EMAIL}
+    depends_on:
+      db:
+        condition: service_healthy  # 等待 db 容器健康
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=anhen_health_assistant
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./template/anhen_health_assistant.sql:/docker-entrypoint-initdb.d/anhen_health_assistant.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge
+```
+
+### 5. 設置環境變數
+在專案根目錄複製 `.env_example` 為 `.env`，並修改以下內容：
+
+```plaintext
+PORT=3000
+DB_HOST=db
+DB_USER=root
+DB_PASSWORD=your_secure_password
+DB_NAME=anhen_health_assistant
+JWT_SECRET=your_random_secure_jwt_secret_32_chars
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+DEVELOPER_EMAIL=your_developer_email@example.com
+FRONTEND_BASE_URL=http://anhenghealth.ddns.net
+AI_API_URL=http://your-ai-server.com
+```
+
+#### 環境變數說明
+- `PORT`: 伺服器運行的端口，預設為 3000。
+- `DB_*`: 資料庫連線資訊，根據你的 MySQL 配置調整。
+- `JWT_SECRET`: 用於簽署 JWT 的密鑰，建議使用隨機且安全的字串（至少 32 字元）。
+- `EMAIL_*`: 郵件服務配置，用於寄送問題回報通知。
+  - 如果使用 Gmail，`EMAIL_PASS` 應為應用程式密碼（參考 [Gmail 應用程式密碼設置](https://support.google.com/accounts/answer/185833)）。
+- `DEVELOPER_EMAIL`: 接收問題回報通知的開發者信箱。
+- `FRONTEND_BASE_URL`: 前端應用程式基礎 URL，用於生成連結或回調。
+- `AI_API_URL`: AI 伺服器 API 基礎 URL，用於 `/api/v1/ai/chat` 端點的外部請求。
+
+### 6. 建置與啟動
+建置並啟動 Docker 容器：
+
+```bash
+docker-compose up -d --build
+```
+
+檢查容器狀態：
+
+```bash
+docker-compose ps
+```
+
+應顯示 `anhen-health-app` 和 `anhen-health-db` 為 `Up`。
+
+查看日誌：
+
+```bash
+docker-compose logs app
+```
+
+應看到 `Server running on port 3000`。
+
+### 7. 資料庫初始化
+MySQL 容器會自動執行 `./template/anhen_health_assistant.sql` 匯入資料表。
+
+### 8. 測試 API
+使用工具（如 Postman 或 cURL）測試 API 端點。主要端點包括：
+- **註冊**: `POST http://localhost:3000/api/v1/auth/register`
+- **登入**: `POST http://localhost:3000/api/v1/auth/login`
+- **AI 聊天**: `POST http://localhost:3000/api/v1/ai/chat`（需認證）
+
+範例 cURL 測試：
+
+```bash
+# 登入
+curl -X POST http://localhost:3000/api/v1/auth/login \
+-H "Content-Type: application/json" \
+-d '{"username": "testuser", "password": "password123"}'
+
+# AI 聊天
+curl -X POST http://localhost:3000/api/v1/ai/chat \
+-H "Authorization: Bearer <your_jwt_token>" \
+-H "Content-Type: application/json" \
+-d '{"message": "請提供健康建議"}'
+```
+
+詳細的 API 規格請參考 [API 文檔](#api-文檔)。
 
 ---
 
