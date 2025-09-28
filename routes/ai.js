@@ -125,7 +125,7 @@ router.post('/chat', auth, async (req, res) => {
     formattedMessage += `用戶問題：${message}`;
     console.log(formattedMessage);
     // 呼叫 AI Server API
-    const aiResponse = await axios.post(`${AI_API_URL}/chat/ai`, {
+    const aiResponse = await axios.post(`${AI_API_URL}/api/chat/ai`, {
       message: formattedMessage
     }, {
       headers: {
